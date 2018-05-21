@@ -1225,7 +1225,7 @@ impl<'a> Context<'a> {
                 "passArray16ToWasm"
             }
             VectorKind::I32 |
-            VectorKind::U32 =>{
+            VectorKind::U32 => {
                 self.expose_pass_array32_to_wasm()?;
                 "passArray32ToWasm"
             }
