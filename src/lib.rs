@@ -90,6 +90,15 @@ impl JsValue {
             JsValue { idx: __wbindgen_boolean_new(b as u32) }
         }
     }
+    /// Creates a new JS value which is a char
+    /// 
+    /// This function create a JS object representing a single character
+    /// string and returns a handle to the JS version of it.
+    pub fn from_char(c: char) -> JsValue {
+        unsafe {
+            JsValue { idx: __wbindgen_char_new(c as u32)}
+        }
+    }
 
     /// Creates a new JS value representing `undefined`.
     pub fn undefined() -> JsValue {
@@ -263,6 +272,12 @@ impl From<bool> for JsValue {
     }
 }
 
+impl From<char> for JsValue {
+    fn from(s: char) -> JsValue {
+        JsValue::from_char(s)
+    }
+}
+
 macro_rules! numbers {
     ($($n:ident)*) => ($(
         impl From<$n> for JsValue {
@@ -305,6 +320,8 @@ externs! {
     fn __wbindgen_is_undefined(idx: u32) -> u32;
     fn __wbindgen_boolean_new(val: u32) -> u32;
     fn __wbindgen_boolean_get(idx: u32) -> u32;
+    fn __wbindgen_char_new(val: u32) -> u32;
+    fn __wbindgen_char_get(idx: u32) -> u32;
     fn __wbindgen_symbol_new(ptr: *const u8, len: usize) -> u32;
     fn __wbindgen_is_symbol(idx: u32) -> u32;
     fn __wbindgen_string_get(idx: u32, len: *mut usize) -> *mut u8;

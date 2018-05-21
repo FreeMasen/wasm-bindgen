@@ -3,7 +3,7 @@ use failure::Error;
 use super::{indent, Context};
 use descriptor::{Descriptor, Function};
 
-/// Helper struct for manfuacturing a shim in JS used to translate JS types to
+/// Helper struct for manufacturing a shim in JS used to translate JS types to
 /// Rust, aka pass from JS back into Rust
 pub struct Js2Rust<'a, 'b: 'a> {
     cx: &'a mut Context<'b>,
@@ -209,7 +209,17 @@ impl<'a, 'b> Js2Rust<'a, 'b> {
                     ", name = name));
                 }
                 self.rust_arguments.push(format!("{} ? 1 : 0", name));
-            }
+            },
+            Descriptor::Char => {
+                self.js_arguments.push((name.clone(), "string".to_string()));
+                if self.cx.config.debug {
+                    self.cx.expose_assert_char();
+                    self.prelude(&format!("\
+                        _assertChar({name});\n\
+                    ", name = name));
+                }
+                self.rust_arguments.push(format!("{}.codePointAt(0)", name))
+            },
             Descriptor::Anyref => {
                 self.js_arguments.push((name.clone(), "any".to_string()));
                 self.cx.expose_add_heap_object();
@@ -298,12 +308,16 @@ impl<'a, 'b> Js2Rust<'a, 'b> {
             Descriptor::Boolean => {
                 self.ret_ty = "boolean".to_string();
                 self.ret_expr = format!("return (RET) !== 0;");
-            }
+            },
+            Descriptor::Char => {
+                self.ret_ty = "string".to_string();
+                self.ret_expr = format!("return String.fromCodePoint(RET)")
+            },
             Descriptor::Anyref => {
                 self.ret_ty = "any".to_string();
                 self.cx.expose_take_object();
                 self.ret_expr = format!("return takeObject(RET);");
-            }
+            },
             _ => bail!("unsupported return from Rust to JS {:?}", ty),
         }
         Ok(self)
@@ -316,7 +330,7 @@ impl<'a, 'b> Js2Rust<'a, 'b> {
     /// invoking, like `wasm.bar` or `this.f`.
     ///
     /// Returns two strings, the first of which is the JS expression for the
-    /// generated function shim and the second is a TyepScript signature of rthe
+    /// generated function shim and the second is a TypeScript signature of the
     /// JS expression.
     pub fn finish(&self, prefix: &str, invoc: &str) -> (String, String) {
         let js_args = self.js_arguments

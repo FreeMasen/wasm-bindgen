@@ -216,6 +216,25 @@ impl<'a> Context<'a> {
             "))
         })?;
 
+        self.bind("__wbindgen_char_new", &|me| {
+            me.expose_add_heap_object();
+            Ok(String::from("function(i) { return addHeapObject(i); }"))
+        })?;
+
+        self.bind("__wbindgen_char_get", &|me| {
+            me.expose_get_object();
+            me.expose_uint8_memory();
+            Ok(format!("
+                function(n, invalid) {{
+                    let obj = getObject(n);
+                    if (typeof(obj) === 'number')
+                        return String.fromCodePoint(obj);
+                    getUint8Memory()[invalid] = 1;
+                    return 0;
+                }}
+            "))
+        })?;
+
         self.bind("__wbindgen_symbol_new", &|me| {
             me.expose_get_string_from_wasm();
             me.expose_add_heap_object();
@@ -1084,7 +1103,7 @@ impl<'a> Context<'a> {
             VectorKind::Anyref => {
                 self.expose_uint32_memory();
                 "getUint32Memory"
-            }
+            },
         }
     }
 
@@ -1206,7 +1225,7 @@ impl<'a> Context<'a> {
                 "passArray16ToWasm"
             }
             VectorKind::I32 |
-            VectorKind::U32 => {
+            VectorKind::U32 =>{
                 self.expose_pass_array32_to_wasm()?;
                 "passArray32ToWasm"
             }
@@ -1225,9 +1244,13 @@ impl<'a> Context<'a> {
             }
             VectorKind::Anyref => {
                 bail!("cannot pass list of JsValue to wasm yet")
-            }
+            },
         };
         Ok(s)
+    }
+
+    fn expose_assert_char(&mut self) -> &'static str {
+        ""
     }
 
     fn expose_get_vector_from_wasm(&mut self, ty: VectorKind) -> &'static str {
